@@ -1,0 +1,85 @@
+The easiest genes to find in a bioinformatics search are single exon, these can be identified without requiring significant computational resources. About 12% of human genes are single exon [Sakharkar 2005], we take as an example a Histone: HIST1H3A, because of it's relative simplicity, and since these are ubiquitous to all Eukaryotes (enabling comparative studies).
+1 - Search NCBI Genes for HIST1H3A (human) [http://www.ncbi.nlm.nih.gov/gene/8350] 
+Scroll to the 'Genomic regions, transcripts, and products' section, and click on the link 'FASTA'. This will give you the DNA sequence. Save it for later, put it in a '.txt' document then change the extension to '.fa'
+
+>gi|568815592:26020490-26020958 Homo sapiens chromosome 6, GRCh38.p2 Primary Assembly
+ATGGCTCGCACTAAGCAAACTGCTCGGAAGTCTACTGGTGGCAAGGCGCCACGCAAACAGTTGGCCACTA
+AGGCAGCCCGCAAAAGCGCTCCGGCCACCGGCGGCGTGAAAAAGCCCCACCGCTACCGGCCGGGCACCGT
+GGCTCTGCGCGAGATCCGCCGTTATCAGAAGTCCACTGAACTGCTTATTCGTAAACTACCTTTCCAGCGC
+CTGGTGCGCGAGATTGCGCAGGACTTTAAAACAGACCTGCGTTTCCAGAGCTCCGCTGTGATGGCTCTGC
+AGGAGGCGTGCGAGGCCTACTTGGTAGGGCTATTTGAGGACACTAACCTGTGCGCCATCCACGCCAAGCG
+CGTCACTATCATGCCCAAGGACATCCAGCTCGCCCGCCGCATCCGCGGAGAGAGGGCGTGATTACTGTGG
+TCTCTCTGACGGTCCAAGCAAAGGCTCTTTTCAGAGCCACCACCTTTTC
+
+2 - As you can see in the FASTA title, it is on Human Chromosome 6. So to find HIST1H3A's location using R, we need to download chr6.fa.gz from the GRC [http://hgdownload.soe.ucsc.edu/goldenpath/hg19/chromosomes/]
+Open git-bish and use Curl to download the file:
+
+$ curl http://hgdownload.soe.ucsc.edu/goldenpath/hg19/chromosomes/chr6.fa.gz > chr6.fa.gz
+
+3 - Decompress the file:
+$ gzip -d chr6.fa.gz
+
+4 - To enter the new 'chr6.fa' file into R, we need to use a function that can read fasta files. We found one that can do this, 'readDNAStringSet()' on [http://manuals.bioinformatics.ucr.edu/home/ht-seq#TOC-Handling-Many-Sequences-with-XStringSet]
+This function is part of the BSGenome package, which is included in the lightweight version of the BioConductor repository, biocLite().
+
+a) Make sure you are using the BioC repositories by selecting them in the drop-down list Packages>Select Repositories, then click packages>Update packages.
+b)Install BiocLite() using:
+
+source("http://bioconductor.org/biocLite.R")
+biocLite()
+biocLite(c("ShortRead", "Biostrings", "IRanges", "BSgenome", "rtracklayer", "biomaRt", "chipseq", "ChIPpeakAnno", "Rsamtools", "BayesPeak", "PICS", "GenomicRanges", "DESeq", "edgeR", "leeBamViews", "GenomicFeatures", "BSgenome.Celegans.UCSC.ce2"))
+
+5 - This should have included the BSGenome package. So now load the package, Packages>Load Package>BSGenome
+6 - Now you may use the readDNAStringSet() function to 'read in' the contents of our ch6.fa file, and assign it to a new vector:
+
+> chr6Read <- readDNAStringSet("E:\\PortableGit\\Repositories\\hchr-data\\chr6.fa","fasta")
+> chr6Read
+NAStringSet instance of length 1
+        width seq                                                                    names               
+[1] 171115067 NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN...NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN chr6
+
+7 - Lets now try a simple alignment (found in .../ht-seq#TOC-Pattern-Search-and-Alignment-Tools-for-Genome-Mapping). Here we align a short "ATGGTG" sequence.
+
+>mypos <- matchPattern("ATGGTG", chr6Read[[1]], max.mismatch=1)
+>mypos
+Views on a 171115067-letter DNAString subject
+subject: NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN...NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN
+views:
+             start       end width
+     [1]     60046     60051     6 [ATAGTG]
+     [2]     60085     60090     6 [ATTGTG]
+     [3]     60703     60708     6 [ATGGTT]
+     [4]     61132     61137     6 [ATGATG]
+     [5]     61464     61469     6 [ATGGTG]
+     ...       ...       ...   ... ...
+[844750] 171054038 171054043     6 [ATGGTT]
+[844751] 171054465 171054470     6 [ATGGTC]
+[844752] 171054691 171054696     6 [AAGGTG]
+[844753] 171055034 171055039     6 [ATGATG]
+[844754] 171055046 171055051     6 [ATGTTG]
+
+8 - Yay you got this far! Okay lets just try to align the HIST1H3A sequence, you can do the same procedure.  with reading in the FASTA file and use that as the first argument for matchpattern().
+
+>histRead <- readDNAStringSet("E:\\PortableGit\\Repositories\\hchr-data\\HIST1H3A.fa","fasta")
+>mypos <- matchPattern(histRead[[1]], chr6Read[[1]], max.mismatch=1)
+Views on a 171115067-letter DNAString subject
+subject: NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN...NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN
+views:
+       start      end width
+[1] 26020718 26021186   469 [ATGGCTCGCACTAAGCAAACTGCTCGGAAGTCTACT...CCAAGCAAAGGCTCTTTTCAGAGCCACCACCTTTTC]
+
+9 - You have now successfully identified that the HIST1H3A gene is at position 26020718-26021186.
+
+#####
+
+Further Information:
+http://manuals.bioinformatics.ucr.edu/home/ht-seq#TOC-Handling-Many-Sequences-with-XStringSet
+
+Installing BSGenome:
+source("http://bioconductor.org/biocLite.R")
+biocLite()
+biocLite(c("ShortRead", "Biostrings", "IRanges", "BSgenome", "rtracklayer", "biomaRt", "chipseq", "ChIPpeakAnno", "Rsamtools", "BayesPeak", "PICS", "GenomicRanges", "DESeq", "edgeR", "leeBamViews", "GenomicFeatures", "BSgenome.Celegans.UCSC.ce2"))
+
+
+
+
